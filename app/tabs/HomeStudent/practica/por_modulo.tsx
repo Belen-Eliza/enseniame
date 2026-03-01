@@ -1,25 +1,27 @@
-import React, { useState,  useCallback,  } from 'react';
-import { View, Text, StyleSheet, Pressable,  Modal, TouchableOpacity } from "react-native";
-import { Ionicons } from '@expo/vector-icons';
-import Toast from 'react-native-toast-message';
-import { useUserContext } from '@/hooks/useUserContext';
-import {  Modulo, Senia_Alumno } from '@/components/types';
-import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { error_alert } from '@/components/alert';
-import { traer_senias_leccion, traer_senias_leccion_aprendiendo, 
-  traer_senias_leccion_aprendiendo_dominadas } from '@/conexiones/senia_alumno';
-import { paleta } from '@/components/colores';
 import { BotonLogin } from '@/components/botones';
-import { estilos } from '@/components/estilos';
-import { ThemedText } from '@/components/ThemedText';
 import { XPCard } from '@/components/cards';
-import { Image } from 'expo-image';
-import { awardXPClient } from '@/conexiones/xp';
-import { shuffleArray } from '@/components/validaciones';
-import { buscar_modulo } from '@/conexiones/modulos';
+import { paleta } from '@/components/colores';
+import { estilos } from '@/components/estilos';
 import { FlashCardNombre, FlashCardVideo } from '@/components/practica_lecciones';
+import { ThemedText } from '@/components/ThemedText';
+import { Modulo, Senia_Alumno } from '@/components/types';
+import { shuffleArray } from '@/components/validaciones';
 import VideoPlayer from '@/components/VideoPlayer';
-import { ganar_insignia_modulo,  ganar_insignia_senia } from '@/conexiones/insignias';
+import { ganar_insignia_modulo, ganar_insignia_senia } from '@/conexiones/insignias';
+import { buscar_modulo } from '@/conexiones/modulos';
+import {
+  traer_senias_leccion, traer_senias_leccion_aprendiendo,
+  traer_senias_leccion_aprendiendo_dominadas
+} from '@/conexiones/senia_alumno';
+import { awardXPClient } from '@/conexiones/xp';
+import { useUserContext } from '@/hooks/useUserContext';
+import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import React, { useCallback, useState, } from 'react';
+import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import Toast from 'react-native-toast-message';
 
 type Senia_Leccion ={
   senia: Senia_Alumno;    
@@ -223,7 +225,7 @@ export default  function Practica (){
                         </View>
                         <View style={{width:190}}>
                             <XPCard borderColor={paleta.sea_green} bckColor={paleta.sea_green} textColor={'white'} 
-                        title={'Precisión'} cant={cant_correctas/senias.length*100+" %"}/>
+                        title={'Precisión'} cant={Math.round(cant_correctas/senias.length*100)+" %"}/>
                         </View>                                                
                     </View>
                 

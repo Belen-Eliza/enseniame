@@ -1,26 +1,25 @@
-import React, { useState,  useCallback,  } from 'react';
-import { View, Text, StyleSheet, Pressable,  Modal, TouchableOpacity } from "react-native";
-import { Ionicons } from '@expo/vector-icons';
-import Toast from 'react-native-toast-message';
-import { useUserContext } from '@/hooks/useUserContext';
-import {  Insignia,  Senia_Alumno } from '@/components/types';
-import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { error_alert } from '@/components/alert';
-import { paleta,  } from '@/components/colores';
 import { BotonLogin } from '@/components/botones';
-import { estilos } from '@/components/estilos';
-import { ThemedText } from '@/components/ThemedText';
 import { XPCard } from '@/components/cards';
-import { Image } from 'expo-image';
-import { awardXPClient } from '@/conexiones/xp';
-import { aprendiendo_dominadas_practica_x_cate, aprendiendo_practica_x_cate, traer_senias_practica_x_cate } from '@/conexiones/practica';
-import { shuffleArray } from '@/components/validaciones';
-import { FlashCardNombre, FlashCardVideo } from '@/components/practica_lecciones';
-import { buscar_modulo } from '@/conexiones/modulos';
-import { buscarCategoria } from '@/conexiones/categorias';
+import { paleta, } from '@/components/colores';
+import { estilos } from '@/components/estilos';
 import { ModalInsignia } from '@/components/modals';
-import { buscar_insignia, ganar_insignia_modulo, ganar_insignia_senia } from '@/conexiones/insignias';
+import { FlashCardNombre, FlashCardVideo } from '@/components/practica_lecciones';
+import { ThemedText } from '@/components/ThemedText';
+import { Insignia, Senia_Alumno } from '@/components/types';
+import { shuffleArray } from '@/components/validaciones';
 import VideoPlayer from '@/components/VideoPlayer';
+import { buscarCategoria } from '@/conexiones/categorias';
+import { ganar_insignia_modulo, ganar_insignia_senia } from '@/conexiones/insignias';
+import { aprendiendo_dominadas_practica_x_cate, aprendiendo_practica_x_cate, traer_senias_practica_x_cate } from '@/conexiones/practica';
+import { awardXPClient } from '@/conexiones/xp';
+import { useUserContext } from '@/hooks/useUserContext';
+import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import React, { useCallback, useState, } from 'react';
+import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import Toast from 'react-native-toast-message';
 
 
 export default  function Practica (){
@@ -230,12 +229,13 @@ export default  function Practica (){
                         </View>
                         <View style={{width:190}}>
                             <XPCard borderColor={paleta.sea_green} bckColor={paleta.sea_green} textColor={'white'} 
-                        title={'Precisión'} cant={cant_correctas/senias.length*100+" %"}/>
+                        title={'Precisión'} cant={Math.round(cant_correctas/senias.length*100)+" %"}/>
                         </View>                                                
                     </View>
                 
-                <BotonLogin callback={()=>{router.dismissTo("/tabs/HomeStudent");setTerminado(false)}} textColor={'black'} bckColor={paleta.turquesa} text={'Aceptar'}  />
-                    </View>
+                <BotonLogin callback={()=>{router.dismissTo("/tabs/HomeStudent");setTerminado(false)}} 
+                    textColor={'black'} bckColor={paleta.turquesa} text={'Aceptar'}  />
+                </View>
                 
                 )}                                          
                 
@@ -243,7 +243,8 @@ export default  function Practica (){
             </View>
           </View>
         </Modal>
-        <ModalInsignia modalVisible={showModalInsignia} setVisible={setShowInsignia} insignia={insignia} cerrar={()=>{setShowInsignia(false),setTerminado(true)}} />
+        <ModalInsignia modalVisible={showModalInsignia} setVisible={setShowInsignia} insignia={insignia} 
+        cerrar={()=>{setShowInsignia(false),setTerminado(true)}} />
             <Toast/>
         </View>
     )
