@@ -1,0 +1,204 @@
+import {  Logged_Alumno, Logged_Profesor, Logged_User,  } from '@/components/types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {  useState, useEffect } from 'react';
+import { UserContext } from '@/hooks/useUserContext';
+import { supabase } from '../utils/supabase'
+import { error_alert } from '@/components/alert';
+import type { Session } from '@supabase/supabase-js'
+import * as Crypto from 'expo-crypto';
+
+const hash = async (text: string) =>{
+  const h = await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA256, text
+      );
+  
+  return h;
+}
+
+export default function UserContextProvider  ({ children }: { children: React.ReactNode })  {
+    const [user,setUser] = useState<Logged_User>(new Logged_Alumno("","","",0,0,0,0,0,new Date(),0));
+    const [session, setSession] = useState<Session | undefined | null>()
+    
+    const [isLoggedIn, setIsLoggedIn] = useState(false); 
+    const [isLoading, setIsLoading] = useState(false); 
+
+    // Fetch the session once, and subscribe to auth state changes
+  useEffect(() => {
+    const fetchSession = async () => {
+      setIsLoading(true)
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession()
+      if (error) {
+        console.error('Error fetching session:', error)
+      }
+      setSession(session)
+      setIsLoading(false)
+    }
+    fetchSession()
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('Auth state changed:', { event: _event, session })
+      setSession(session)
+    })
+    // Cleanup subscription on unmount
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, []);
+
+  // Fetch the profile when the session changes
+  useEffect(() => {
+    const fetchProfile = async () => {
+      setIsLoading(true)
+      if (session) {
+        const { data } = await supabase
+          .from('Users')
+          .select('id')
+          .eq('auth_id', session.user.id)
+          .single();
+        if (data) actualizar_info(data.id)
+      } 
+      setIsLoading(false)
+    }
+    fetchProfile()
+  }, [session])
+
+    const cambiarNombre = async (nombre_nuevo: string) => {
+        //conectar a db, update
+        try {
+            const { data, error } = await supabase
+                .from('Users')
+                .update({ username: nombre_nuevo })
+                .eq('id', user.id)
+                .select();
+
+            if (error) error_alert("Error al actualizar perfil");
+            if (data && data.length>0) console.log(data)
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    const cambiar_mail = async (mail_nuevo: string) => {
+        //conectar a db, update
+        try {
+            const { data:auth, error:error_auth }=await supabase.auth.updateUser( {email:mail_nuevo});
+            if (error_auth) throw error_auth                        
+            
+        } catch (error) {
+            error_alert("Error al actualizar perfil");
+            console.error(error);
+        }
+    }
+
+
+    const cambiar_password = async (password_nuevo: string) => {
+        //conectar a db, update
+        const hashed_password = await hash(password_nuevo);
+        try {
+            const { data:auth, error:error_auth } = await supabase.auth.updateUser({
+                password: password_nuevo
+                });
+            if (error_auth) throw error_auth
+            const { data, error } = await supabase
+                .from('Users')
+                .update({ hashed_password: hashed_password })
+                .eq('id', user.id)
+                .select();
+
+            if (error) throw error
+            
+        } catch (error) {
+            console.error(error);
+            error_alert("Error al actualizar perfil");
+        }
+    }
+
+    const cambiar_institucion = async (i_nueva: string) => {
+        //conectar a db, update
+        try {
+            const { data, error } = await supabase
+                .from('Profesores')
+                .update({ institucion: i_nueva })
+                .eq('id', user.id)
+                .select();
+
+            if (error) error_alert("Error al actualizar perfil");
+            if (data && data.length>0) console.log(data)
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    const login_app = async (user:Logged_User) => {
+        setUser(user)
+        
+        setIsLoggedIn(true);
+        user.goHome();
+        try {
+            await  AsyncStorage.setItem("token",String(user.id));
+        } catch (error) {
+            console.log(error,"al guardar la sesión");
+        }
+    }
+
+    const logout = async () => {
+        setIsLoggedIn(false);
+        setUser(new Logged_Alumno("","","",0,0,0,0,0,new Date(),0));
+        try {
+            await  AsyncStorage.removeItem("token");
+            const { error } = await supabase.auth.signOut();
+            if (error) throw error
+        } catch (error) {
+            console.log(error,"al cerrar la sesión");
+        }
+    }
+
+    const actualizar_info = async (id:number)=> {
+        //bajar updates de db
+        try{
+            const { data: user, error } = await supabase.from('Users').select('*').eq('id', id).single();
+
+            if (error) {
+                console.error('Error de actualización:', error.message);
+                return;
+            }
+            if (user ) {
+                // Normalize and coerce fields from Users to avoid display/type issues
+                const raw = user;
+                const isProf: boolean = (raw?.is_prof === true) || (raw?.is_prof === 'true') || (raw?.is_prof === 1);
+                const mailNorm: string = String(raw?.mail ?? '').trim().toLowerCase();
+                const usernameNorm: string = String(raw?.username ?? '').trim() || 'Alumno';
+                const passwordHash: string = String(raw?.hashed_password ?? '');
+                
+                if (isProf) {
+                    const { data: profe, error } = await supabase.from('Profesores').select('*').eq('id', id).single();
+                    const institution: string  =  String(profe.institucion).trim() ;
+                    if (error) throw error
+                    setUser(new Logged_Profesor(mailNorm, usernameNorm, passwordHash, institution ?? '', id,profe.is_admin));
+                } else {
+                    const { data: alumno, error } = await supabase.from('Alumnos').select('*').eq('id', id).single();
+                    if (error) throw error
+                    const nuevo =new Logged_Alumno(mailNorm, usernameNorm, passwordHash, id,alumno.racha,
+                                            alumno.racha_maxima,alumno.xp,alumno.coins,alumno.last_login,alumno.nivel,raw.avatar)
+                    setUser(nuevo);                    
+                }            
+            }
+        }
+        catch (error){
+            console.error(error);
+        }
+    }
+
+    return (
+      <UserContext.Provider value={{user, session,isLoggedIn, isLoading , cambiarNombre,cambiar_institucion,
+                                  login_app, logout, cambiar_mail,cambiar_password,actualizar_info}}>
+          {children}
+      </UserContext.Provider>
+  );
+    
+}
+

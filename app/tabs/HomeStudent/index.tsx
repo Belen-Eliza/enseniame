@@ -1,0 +1,790 @@
+import React, { useState, useEffect, useCallback,  } from 'react';
+import { View, Text, StyleSheet, Pressable, ScrollView, Modal, TouchableOpacity, Platform } from "react-native";
+import { Ionicons } from '@expo/vector-icons';
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, runOnJS } from 'react-native-reanimated';
+import ConfettiBurst from '@/components/animations/ConfettiBurst';
+import { useXP } from '@/components/animations/useXP';
+import { XPGainPop } from '@/components/animations/XPGainPop';
+import { router, useFocusEffect } from 'expo-router';
+import { useUserContext } from '@/hooks/useUserContext';
+import { modulos_completados_por_alumno, progreso_por_categoria, todos_los_modulos } from '@/conexiones/modulos';
+import { Image } from 'expo-image';
+import Toast from 'react-native-toast-message';
+import { paleta } from '@/components/colores';
+import {  perder_racha, sumar_racha } from '@/conexiones/racha';
+import { error_alert } from '@/components/alert';
+import { es_hoy, fue_ayer, now } from '@/components/validaciones';
+import { BotonLogin } from '@/components/botones';
+import { AnimatedButton } from '@/components/animations/AnimatedButton';
+import { ProgressBarAnimada } from '@/components/animations/ProgressBarAnimada';
+import { SuccessModal } from '@/components/animations/SuccessModal';
+import { estilos } from '@/components/estilos';
+import { useDailyMissions } from '@/hooks/useDailyMissions';
+import { MissionCard } from '@/components/missions/MissionCard';
+import {  nuevo_avatar_desbloqueado } from '@/conexiones/avatars';
+import { Avatar, Insignia, Senia_Alumno } from '@/components/types';
+import { ThemedText } from '@/components/ThemedText';
+import { ganar_insignia_racha } from '@/conexiones/insignias';
+import { XPCard } from '@/components/cards';
+import type { Mission } from '@/conexiones/misiones';
+import { miNivel } from '@/conexiones/xp';
+import { SmallPopupModal } from '@/components/modals';
+import DropDownPicker from 'react-native-dropdown-picker';
+import { traerCategorias } from '@/conexiones/categorias';
+import {  hay_senias_practica } from '@/conexiones/practica';
+
+export default function HomeStudent() {
+  const contexto = useUserContext();
+  const [modalVisible, setModalVisible] = useState(false);
+  const [user, setUser] = useState({ 
+    id: contexto.user.id,
+    nombre: contexto.user.username,
+    racha: 0,
+    modulosCompletados: 0,
+    level:0
+  });  
+  const [progresoCategorias, setProgresoCategorias] = useState<Array<any>>([]);
+
+  const [showModalRacha,setShowModalRacha] = useState(false);
+  const fuego_racha = require("../../../assets/images/fire3.gif");
+  const racha_perdida =require("../../../assets/images/disappointedBeetle.gif");
+  
+
+  const [showModalAvatar,setShowModalAvatar] = useState(false);
+  const [nuevo_avatar, setNuevoAvatar] = useState<String>();
+  const [desbloqueado,setDesbloqueado] = useState(false);
+  const [streakPopTrigger, setStreakPopTrigger] = useState(0);
+  const [showConfetti, setShowConfetti] = useState(false);
+
+  const [showModalLeccion,setShowLeccion]= useState(false);
+  const [practica,setPractica] = useState(false);  
+  const [openTipoSenia, setOpenTipoSenia] = useState(false);
+  const [valueTipoSenia, setValueTipoSenia] = useState(null);
+  const [tipoSenia, setTipoSenia] = useState<{value:number,label:string}[]>([{value:1,label:"Todas"},{value:2,label:"Sólo aprendiendo"},{value:3,label:"Aprendiendo y dominadas"}]);
+  const [errorTipoSenia,setErrorTipoSenia] = useState("");
+
+  const [porCate,setPorCate] = useState(false);  
+  const [openPorCate, setOpenPorCate] = useState(false);
+  const [valueCate, setValueCate] = useState(null);
+  const [categorias, setCategorias] = useState<{value:number,label:string}[]>([]);
+  const [modulos, setModulos] = useState<{value:number,label:string}[]>([]);
+  const [errorCategoria,setErrorCategoria] = useState("");
+
+  const [showModalInsignia,setShowInsignia] =useState(false);
+  const [insignia,setI]= useState<Insignia>({id:0,nombre:"",descripcion:"",image_url:"",motivo:1,ganada:true});
+
+   // Confetti al entrar a la app (refuerzo visual inmediato)
+  useEffect(() => {    
+    setShowConfetti(true);
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      const fetchModulosCompletados = async () => {
+        const completados = await modulos_completados_por_alumno(contexto.user.id);
+        setUser(prev => ({ ...prev, modulosCompletados: completados || 0 }));
+        //console.log('Modulos completados actualizados:', completados);
+      };
+      
+      fetchModulosCompletados();
+      fetch_progreso_categoria();
+      fetch_misc();
+      fetch_racha();
+        return () => {};
+      }, [])
+    );
+
+ 
+
+  // Solo mostrar las primeras 3 categorías en la vista principal
+  const topCategorias = progresoCategorias.slice(0, 3);
+  const hayMasCategorias = progresoCategorias.length > 3;
+
+  // Componente para renderizar una barra de categoría
+  const CategoriaProgressBar = ({ categoria, index }: { categoria: any, index: number }) => (
+    <View key={String(categoria.categoriaId || index)} style={styles.categoriaItem}>
+      <View style={styles.categoriaHeader}>
+        <Text style={styles.categoriaNombre}>{categoria.nombre}</Text>
+        <Text style={styles.categoriaPorcentaje}>{categoria.porcentaje}%</Text>
+      </View>
+      <ProgressBarAnimada progress={categoria.porcentaje} />
+      
+    </View>
+  );
+  
+
+  const fetch_racha = async () => {
+    try {            
+      let cambio = false;
+      
+      let ultimo_login =new Date(contexto.user.getLastLogin());        
+      if (fue_ayer(ultimo_login)) { 
+        await sumar_racha(contexto.user.id);
+        contexto.user.sumarRacha();
+        console.log("sumo racha",ultimo_login);
+        cambio=true;
+      }
+      else if (!es_hoy(ultimo_login)) {
+        await perder_racha(contexto.user.id);
+        contexto.user.perderRacha()
+        console.log("pierdo racha",ultimo_login);
+        cambio=true;
+      }
+      else {          
+        console.log("es hoy; no sumo ni pierdo")
+      }        
+
+      ganar_insignia_racha(contexto.user.id);
+      setUser(prev => ({ ...prev, racha: contexto.user.getRacha() || 0 }));
+      setTimeout(()=>{setShowModalRacha(cambio);},400);      
+      
+    } catch (error) {
+      console.error(error);
+      error_alert("Ocurrió un error al cargar la racha");
+    }    
+
+  };
+
+  const cerrar_modal_racha = async () => {
+    try {            
+      if (desbloqueado) {        
+        //modal avatar nuevo    
+        const a:Avatar = await nuevo_avatar_desbloqueado(user.racha) ;
+        setNuevoAvatar(a.image_url);
+        setShowModalRacha(false);
+        setShowModalAvatar(true);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setShowModalRacha(false)
+    }
+  }
+
+  const fetch_misc = async () => {
+    const level = await miNivel(contexto.user.id);
+    setUser(prev => ({ ...prev, level: level?.nivel || 0 }));
+
+    const cates = await traerCategorias();
+    const items = cates.map(c=>{return {label:c.nombre,value:c.id}});
+    setCategorias(items || []);
+
+    const m = await todos_los_modulos();
+    const itemsM = m?.map(each=>{return {label:each.nombre,value:each.id}});
+    setModulos(itemsM || []);
+  }
+
+  const fetch_progreso_categoria = async () => {        
+    try{
+      const data = await progreso_por_categoria(contexto.user.id);
+      setProgresoCategorias(data || []);
+      //console.log('Progreso por categoría cargado:', data);
+    } catch(err){ 
+      console.error('Error cargando progreso por categoría', err) ;
+    }
+      
+  }
+
+  const empezarLeccion = async ()=>{
+    if (valueTipoSenia!=undefined && valueCate!=undefined) {      
+           
+      let path:  '/tabs/HomeStudent/practica/por_categoria' | '/tabs/HomeStudent/lecciones/por_categoria' 
+          | '/tabs/HomeStudent/practica/por_modulo' | '/tabs/HomeStudent/lecciones/por_modulo';
+      
+      if (porCate) {
+        if (practica) {
+          path ='/tabs/HomeStudent/practica/por_categoria';                                       
+           //router.push({ pathname:path , params: { id: valueCate ,opcion: valueTipoSenia } });
+        } else {
+          path= '/tabs/HomeStudent/lecciones/por_categoria';
+          //router.push({ pathname: '/tabs/HomeStudent/lecciones/por_categoria', params: { id: valueCate ,opcion: valueTipoSenia } })
+        }
+      }
+      else{
+        if (practica) {
+          path= '/tabs/HomeStudent/practica/por_modulo';
+           //router.push({ pathname: '/tabs/HomeStudent/practica/por_modulo', params: { id: valueCate ,opcion: valueTipoSenia } });
+        } else {
+          path='/tabs/HomeStudent/lecciones/por_modulo';
+          //router.push({ pathname: '/tabs/HomeStudent/lecciones/por_modulo', params: { id: valueCate ,opcion: valueTipoSenia } })
+        }         
+      }
+
+      if (await hay_senias_practica(contexto.user.id,porCate,valueTipoSenia,valueCate)) {
+        setShowLeccion(false);
+        router.push({ pathname:path , params: { id: valueCate ,opcion: valueTipoSenia } });
+        setErrorTipoSenia("");
+        setErrorCategoria("");
+        setValueCate(null);
+        setValueTipoSenia(null);        
+      } else{
+        setErrorTipoSenia("No hay señas que cumplan las condiciones");
+      }      
+      
+    } else {
+      if (!valueTipoSenia) setErrorTipoSenia("Debes seleccionar una opción");
+      if (!valueCate) setErrorCategoria("Debes seleccionar una opción");
+    }    
+  }
+
+  return (
+    <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <Text style={styles.title}>Hola, {contexto.user.username} 👋</Text>
+        
+        <View style={styles.stackCards}>
+          <View style={[styles.card, styles.cardLeft]}> 
+            <View style={estilos.centrado}><AnimatedFlame trigger={streakPopTrigger} /></View>
+            
+            <Text style={styles.cardTitleCursos}>{user.racha} {user.racha ==1 ? 'día':'días'} de racha</Text>                        
+          </View>
+          <Pressable style={[styles.card, styles.cardRight]} onPress={() => router.push('/tabs/Dashboard_Alumno')}>            
+            <ThemedText style={[styles.cardTitleCursos,estilos.centrado,{marginTop:10,fontSize:25}]}>Nivel {user.level}</ThemedText>            
+            <ThemedText style={[styles.xpInfo,estilos.centrado]}>{contexto.user.getXP()} XP</ThemedText>
+            <Ionicons name='barbell' size={50} color={paleta.turquesa} style={estilos.centrado}/>
+          </Pressable>
+        </View>
+
+        <View style={[styles.card, {marginTop: 8, marginBottom: 20}]}>
+          <View style={styles.categoriasHeader}>
+            <Text style={styles.categoriasTitle}>Tus categorías más aprendidas</Text>
+            {hayMasCategorias && (
+              <TouchableOpacity 
+                onPress={() => setModalVisible(true)}
+                style={styles.verTodasButton}
+              >
+                <Text style={styles.verTodasText}>Ver todas</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          <View style={{alignItems: 'center', marginBottom: 10, width: "100%"}}>
+          {progresoCategorias.length === 0 && <Text style={{color:'#666'}}>Aún no hay progreso por categoría</Text>}
+          <ScrollView style={{maxHeight: 200, maxWidth: '100%', width: "100%"}}>
+            {topCategorias.map((categoria, idx) => (
+              <CategoriaProgressBar key={categoria.categoriaId} categoria={categoria} index={idx} />
+            ))}
+          </ScrollView>
+          </View>
+        </View>
+        
+        <AnimatedButton title="Practicar ahora" onPress={() => setShowLeccion(true)} style={styles.ctaButtonCursos} textStyle={styles.ctaButtonTextCursos} />
+
+        <View style={styles.shortcutsRow}>
+          <Pressable style={styles.shortcutCardCursos} onPress={() => router.push('/tabs/leaderboard_grupo')}>
+            <Ionicons name="trophy" size={22} color="#20bfa9" />
+            <Text style={styles.shortcutTextCursos}>Ranking</Text>
+          </Pressable>
+          <Pressable style={styles.shortcutCardCursos} onPress={() => router.push('/tabs/HomeStudent/alumno_objetivos')}>
+            <Ionicons name="flag" size={22} color="#20bfa9" />
+            <Text style={styles.shortcutTextCursos}>Mis objetivos</Text>
+          </Pressable>
+        </View>
+
+        {/* Misiones Diarias Preview */}
+       {/*  <DailyMissionsPreview userId={contexto.user.id} router={router} /> */}
+        
+      </ScrollView>
+
+      {/* Modal para mostrar todas las categorías */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={[styles.modalContainer]}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Todas las categorías</Text>
+              <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
+                <Ionicons name="close-circle" size={28} color="#20bfa9" />
+              </TouchableOpacity>
+            </View>
+            
+            <ScrollView style={styles.modalScrollView}>
+              {progresoCategorias.map((categoria, idx) => (
+                <CategoriaProgressBar key={categoria.categoriaId} categoria={categoria} index={idx} />
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal de sumar o perder racha */}
+        <Modal
+          visible={showModalRacha}
+          animationType="fade"
+          transparent={true}
+        >
+          <View style={[styles.modalContainerRacha,estilos.centrado]}>
+            <View style={[styles.modalContent,{height:"100%"}]}>
+              {user.racha==1 ? (
+                <View>
+                    
+                    <Image
+                      style={[styles.modal_image,estilos.centrado]}
+                      source={racha_perdida}
+                      contentFit="contain"
+                      transition={0}
+                    />
+                    <Text style={[styles.title_racha]}>Perdiste tu racha</Text>
+                    <ThemedText type='defaultSemiBold' lightColor={paleta.dark_aqua}>Practica diariamente para volver a encaminarte</ThemedText>
+                
+                <BotonLogin callback={()=>setShowModalRacha(false)} textColor={'black'} bckColor={paleta.turquesa} text={'Aceptar'}  />
+                </View>
+                ):(
+                  <View >
+                    <View style={[{flexDirection:"row",alignSelf:"flex-end"}]}> 
+                      <Text style={[styles.cardTitleCursos,estilos.centrado]}>{user.racha} </Text>
+                      <Ionicons name="flame" size={28} color={paleta.strong_yellow} style={{marginBottom: 8}} />
+                      
+                    </View>
+                    <Image
+                      style={[styles.modal_image,estilos.centrado]}
+                      source={fuego_racha}
+                      contentFit="cover"
+                      transition={0}
+                    />
+                  <XPCard borderColor={paleta.turquesa} bckColor={paleta.turquesa} textColor={'white'} 
+                    title={'XP ganado'} cant={user.racha*2+""} icon='barbell' iconColor={paleta.dark_aqua}/>
+                <ThemedText style={[styles.title_racha]}>¡¡Tienes {user.racha} días de racha!!</ThemedText>
+                <ThemedText type='defaultSemiBold' lightColor={paleta.dark_aqua}>¡Sigue aprendiendo mañana para llegar a {user.racha+1}!</ThemedText>
+                <BotonLogin callback={cerrar_modal_racha} textColor={'black'} bckColor={paleta.turquesa} text={'Aceptar'}  />
+                </View>
+                )}                                          
+                
+              
+            </View>
+          </View>
+        </Modal>
+        <SuccessModal visible={false} title="¡Excelente!" subtitle="Acción completada" onClose={() => {}} />
+
+        {/* Modal de desbloquear un nuevo avatar */}
+        <Modal
+          visible={showModalAvatar}
+          animationType="fade"
+          transparent={true}
+        >
+          <View style={[styles.modalContainer,estilos.centrado,{width:"100%"}]}>
+            <View style={[styles.modalContent,{height:"60%",borderBottomEndRadius:20,borderBottomStartRadius:20}]}>             
+                  <View>
+                    <Text style={[styles.title_racha,estilos.centrado]}>¡¡Desbloqueaste un nuevo avatar!!</Text>
+                    <Image
+                      style={[styles.image]}
+                      source={nuevo_avatar? nuevo_avatar : fuego_racha}
+                      contentFit="contain"
+                      transition={0}
+                    />
+                  <BotonLogin callback={()=>{setShowModalAvatar(false);contexto.user.gotToProfile()}} textColor={'black'} bckColor={paleta.turquesa} text={'Equipar'}  />                
+                  <Pressable style={[estilos.centrado,{marginTop:10}]} onPress={()=>setShowModalAvatar(false)}>
+                    <ThemedText lightColor={paleta.dark_aqua} type='subtitle'>Cerrar</ThemedText>
+                  </Pressable>
+                </View>                                                                                      
+            </View>
+          </View>
+        </Modal>
+         <SmallPopupModal title={"Lección"} modalVisible={showModalLeccion} setVisible={setShowLeccion}>          
+          <View>
+            <View style={[{flexDirection:"row",width:"100%"},estilos.centrado]}>
+              <TouchableOpacity style={[styles.filtros,
+              practica ? {backgroundColor: paleta.turquesa}: {backgroundColor:"lightgray"}]} 
+                onPress={()=>setPractica(true)}>
+                <ThemedText style={estilos.centrado} lightColor={"black"} type="defaultSemiBold">Práctica</ThemedText>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.filtros,{backgroundColor: practica ? "lightgray":paleta.turquesa}]} 
+                onPress={()=>setPractica(false)}>
+                <ThemedText style={estilos.centrado} lightColor={"black"} type="defaultSemiBold">Teoría</ThemedText>
+              </TouchableOpacity>                    
+            </View>
+            <ThemedText type='subtitle' style={[styles.label,{marginTop:20}]}>¿Qué señas deseas repasar?</ThemedText>
+            <DropDownPicker
+              open={openTipoSenia}
+              value={valueTipoSenia}
+              items={tipoSenia}
+              setOpen={setOpenTipoSenia}
+              setValue={setValueTipoSenia}
+              setItems={setTipoSenia}
+              placeholder={'Elige una opción'}
+              placeholderStyle={{color:"#888"}}
+              style={styles.input}
+            />
+            {errorTipoSenia ? <ThemedText type='error' style={{maxWidth: "80%"}}>{errorTipoSenia}</ThemedText> : null}
+            <View style={[{flexDirection:"row",width:"100%"},estilos.centrado]}>
+              <TouchableOpacity style={[styles.filtros,
+              porCate ? {backgroundColor: paleta.turquesa}: {backgroundColor:"lightgray"}]} 
+                onPress={()=>setPorCate(true)}>
+                <ThemedText style={estilos.centrado} lightColor={"black"} type="defaultSemiBold">Por categoría</ThemedText>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.filtros,{backgroundColor: porCate ? "lightgray":paleta.turquesa}]} 
+                onPress={()=>setPorCate(false)}>
+                <ThemedText style={estilos.centrado} lightColor={"black"} type="defaultSemiBold">Por módulo</ThemedText>
+              </TouchableOpacity>                    
+            </View>
+            <ThemedText type='subtitle' style={[styles.label,{marginTop:20}]}>Selecciona {porCate ? "la categoría": "el módulo"} </ThemedText>
+            <DropDownPicker
+              open={openPorCate}
+              value={valueCate}
+              items={porCate ? categorias : modulos}
+              setOpen={setOpenPorCate}
+              setValue={setValueCate}
+              setItems={setCategorias}
+              placeholder={'Elige una opción'}
+              placeholderStyle={{color:"#888"}}
+              style={styles.input}
+            />
+            {errorCategoria ? <ThemedText type='error' style={{maxWidth: "80%"}}>{errorCategoria}</ThemedText> : null}
+            <BotonLogin callback={empezarLeccion} textColor={"black"} bckColor={paleta.strong_yellow} text={"Empezar lección"}/>
+          </View>
+        </SmallPopupModal>
+  {showConfetti && <ConfettiBurst visible={showConfetti} onDone={() => {setShowConfetti(false),fetch_progreso_categoria()}} />}
+  <Toast/>
+    </View>
+  );
+}
+
+// Componente de fueguito animado (pulso continuo + leve glow)
+function AnimatedFlame({ trigger }: { trigger: number }) {
+  const scale = useSharedValue(1);
+  const glow = useSharedValue(0);
+  const pop = useSharedValue(0);
+  useEffect(() => {
+    scale.value = withRepeat(withSequence(
+      withTiming(1.18, { duration: 600 }),
+      withTiming(1.0, { duration: 600 })
+    ), -1, true);
+    glow.value = withRepeat(withSequence(
+      withTiming(1, { duration: 700 }),
+      withTiming(0, { duration: 700 })
+    ), -1, true);
+  }, []);
+  // Pop cuando trigger cambia (racha aumenta)
+  useEffect(() => {
+    if (trigger === 0) return;
+    pop.value = 0;
+    pop.value = withSequence(
+      withTiming(1, { duration: 90 }),
+      withTiming(0, { duration: 320 })
+    );
+  }, [trigger]);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value + pop.value * 0.5 }],
+    shadowColor: '#ff6d00',
+    shadowOpacity: 0.4 * glow.value + 0.5 * pop.value,
+    shadowRadius: 16 + 10 * glow.value + 14 * pop.value,
+    shadowOffset: { width: 0, height: 4 }
+  }));
+  return (
+    <Animated.View style={[{ marginBottom: 8, alignSelf: 'flex-start' }, animatedStyle]}>
+      <Ionicons name="flame" size={52} color={paleta.strong_yellow} />
+    </Animated.View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#e6f7f2',
+    position: 'relative',
+    paddingTop: 0,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS !== "android" ? 40:20,
+    paddingBottom: 60,
+    zIndex: 2,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#222',
+    marginTop: 32,
+    marginBottom: 38,
+    alignSelf: 'center',
+    zIndex: 2,
+    letterSpacing: 0.5,
+  },
+  stackCards: {
+    flexDirection: 'row',
+    width: '100%',
+    marginBottom: 20,
+  },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 32,
+    padding: 24,
+    flex: 1, 
+    alignItems: 'flex-start',
+    shadowColor: '#222',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+    borderWidth: 1.5,
+    borderColor: '#e0e0e0',
+  },
+  cardLeft: {
+    marginRight: 6,
+  },
+  cardRight: {
+    marginLeft: 6,
+  },
+  cardTitleCursos: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#222',
+    marginBottom: 2,
+    fontFamily: 'System',
+    letterSpacing: 0.2,
+    textAlign: 'center',
+  },
+  xpInfo: {
+    marginTop: 4,
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#555'
+  },
+  categoriasHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  categoriasTitle: {
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  verTodasButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+  },
+  verTodasText: {
+    color: '#20bfa9',
+    fontWeight: '600',
+    fontSize: 10,
+    marginLeft: 20
+  },
+  categoriaItem: {
+    marginBottom: 14,
+  },
+  categoriaHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  categoriaNombre: {
+    fontWeight: '600',
+    fontSize: 14,
+    color: '#333',
+  },
+  categoriaPorcentaje: {
+    fontWeight: '600',
+    fontSize: 14,
+    color: '#20bfa9',
+  },
+  progressBarBg: {
+    width: '100%',
+    height: 12,
+    backgroundColor: '#eee',
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#20bfa9',
+    borderRadius: 6,
+  },
+  ctaButtonCursos: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#20bfa9',
+    borderRadius: 14,
+    height: 50,
+    marginBottom: 18,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  ctaButtonTextCursos: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  buttonIcon: {
+    marginRight: 8,
+  },
+  shortcutsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  shortcutCardCursos: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingVertical: 18,
+    marginHorizontal: 6,
+    borderWidth: 1.5,
+    borderColor: '#e0e0e0',
+    shadowColor: '#222',
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
+  },
+  shortcutTextCursos: {
+    color: '#20bfa9',
+    fontWeight: 'bold',
+    fontSize: 14,
+    marginTop: 6,
+    fontFamily: 'System',
+  },
+
+  // Estilos para el modal
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 20,
+    paddingBottom: 30,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#222',
+  },
+  closeButton: {
+    padding: 5,
+  },
+  modalScrollView: {
+    paddingBottom: 20,
+    maxHeight: 400
+  },
+  image: {
+    flex: 1,
+    width: "100%",
+    height: "100%",    
+  },
+  title_racha: {
+    fontSize: 26,
+    fontWeight: "bold",
+    marginBottom: 30,
+    marginTop:60,
+    color: paleta.dark_aqua,
+    alignSelf: "center",
+  },
+  modalContainerRacha: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'white',
+    height:"100%",
+    width:"100%"
+  },
+  modal_image:{
+    flex: 2,
+    width: "120%",
+    height: "120%", },
+  missionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  missionBox: {
+    marginTop: 20,
+    marginBottom: 10,
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 18,
+    borderWidth: 1.5,
+    borderColor: '#e0e0e0',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+  },
+  missionEmpty: {
+    color: '#777',
+    fontSize: 13,
+    alignSelf: 'center',
+    marginTop: 2,
+  },
+  seeAllLink: {
+    color:'#0a7ea4',
+    fontWeight:'600'
+  },
+  label: {
+    fontSize: 16,
+    color: paleta.dark_aqua,
+    fontWeight: '600',
+    marginBottom: 8,
+    alignSelf: 'flex-start',
+    textAlign: 'center',
+  },
+  filtros: {
+    paddingVertical: 18,    
+    borderRadius: 20,        
+    marginHorizontal: 5,
+    marginBottom: 15,
+    width: 150,
+    textAlign:"center"
+  },
+  input: {
+    height: 40,
+    borderColor: "#ccc",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    marginBottom: 25,
+  },
+  progressBar: {
+    height: 10,
+    backgroundColor: '#e9f7f4',
+    borderRadius: 8,
+    overflow: 'hidden',    
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#20bfa9',
+    borderRadius: 8,
+  },
+});
+
+// Subcomponente para preview de misiones diarias
+function DailyMissionsPreview({ userId, router }: { userId: number; router: any }) {
+  const { missions, progressRatio, allCompleted } = {missions:[],progressRatio:0,allCompleted:false} //useDailyMissions(userId);
+  const mostrar = missions.slice(0,2);
+  return (
+    <View style={styles.missionBox}>
+      <View style={styles.missionHeaderRow}>
+        <Text style={{ fontSize:18, fontWeight:'bold', color:'#222' }}>Misiones de hoy</Text>
+        <Text style={styles.seeAllLink} onPress={() => router.push('/tabs/misiones')}>Ver todas</Text>
+      </View>
+      {missions.length === 0 && (
+        <Text style={styles.missionEmpty}>Se generarán al comenzar el día.</Text>
+      )}
+      {mostrar.map((m: Mission) => (
+        <MissionCard key={m.id} mission={m} />
+      ))}
+      <Text style={{ marginTop:4, fontSize:12, color:'#555' }}>Progreso global: {Math.round(progressRatio*100)}% {allCompleted? '✔':''}</Text>
+      {allCompleted && (
+        <Text style={{ marginTop:6, fontSize:13, fontWeight:'600', color:'#ff9800' }}>¡Todas completadas! Bonus aplicado.</Text>
+      )}
+    </View>
+  );
+}

@@ -1,0 +1,373 @@
+import React, { useCallback,  useState } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator, SectionList, 
+  RefreshControl, TouchableOpacity, Pressable, 
+  ScrollView} from 'react-native';
+import { useRouter } from 'expo-router';
+import { useUserContext } from '@/hooks/useUserContext';
+import ProgressCard from '@/components/ProgressCard';
+import GlobalProgress from '@/components/GlobalProgress';
+import HistorialItem from '@/components/HistorialItem';
+import { useFocusEffect } from '@react-navigation/native';
+import Toast from 'react-native-toast-message';
+import { ThemedText } from '@/components/ThemedText';
+import {  RatingCard } from '@/components/review';
+import { paleta } from '@/components/colores';
+import { estilos } from '@/components/estilos';
+import { error_alert } from '@/components/alert';
+import { getRanking } from '@/conexiones/calificaciones';
+import { mi_progreso_global, mi_progreso_x_modulo, senias_aprendiendo_dash, senias_historial } from '@/conexiones/dashboard';
+import { SmallPopupModal } from '@/components/modals';
+import { ProgressBarAnimada } from '@/components/animations/ProgressBarAnimada';
+import { AprendiendoItem } from '@/components/AprendiendoItem';
+
+type DatosRanking ={
+    id: number;
+    username: string;
+    promedio: number;
+    cant_reviews: number
+}
+
+type HistorialRow = { senia_id: number; updated_at: Date; categoria: string; senia_nombre: string };
+type AprendiendoRow = { senia_id: number; updated_at: Date; categoria: string; senia_nombre: string, cant_aciertos: number };
+type ProgresoGlobal = {learned:number,total:number}
+type ProgresoPorModulo ={ id: number; nombre: string; total: number; learned: number }
+
+type SectionType = 'modules' | 'history' | 'ranking' | 'aprendiendo';
+
+type DashboardSection = {
+  title: string;
+  type: SectionType;
+  data: any[];
+};
+
+export default function DashboardAlumnoScreen() {
+  const { user } = useUserContext();
+  const router = useRouter();
+
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [historial, setHistorial] = useState<HistorialRow[]>([]);  
+  const [seniasAprendiendo,setAprendiendo] = useState<AprendiendoRow[]>([]); 
+  const [progresoGlobal,setProgresoGlobal] = useState<ProgresoGlobal>({learned:0,total:0});
+  const [dataRanking,setDataRanking] = useState<DatosRanking[]>([]);
+  const [progresoPorModulo,setProgresoPorModulo]= useState<ProgresoPorModulo[]>([]);
+
+  const [showModalModulos,setShowModulos]=useState(false);
+  const [showModalAprendiendo,setShowAprendiendo]=useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      try {              
+        fetchHistorial();
+        fetchProgresoGlobal();
+        fetchProgresoModulo();
+        fetchRanking();
+      } catch (error) {
+        error_alert("No se pudo generar el reporte.");
+        console.error("[Dashboard]: ",error);
+      } 
+      return () => {
+      };
+    }, [])
+  );
+
+  const fetchHistorial = async () => {
+    const h = await senias_historial(user.id);    
+    setHistorial(h || []);    
+
+    const a = await senias_aprendiendo_dash(user.id);    
+    setAprendiendo(a);
+  }
+
+  const fetchProgresoGlobal = async () => {
+    const p = await mi_progreso_global(user.id);
+    setProgresoGlobal(p);    
+  }
+  
+  const fetchProgresoModulo = async () => {
+    const pm= await mi_progreso_x_modulo(user.id);
+    //ordenar por mayor porcentaje    
+    pm.sort(function (a, b) {
+      if (a.learned/a.total < b.learned/b.total) {
+        return 1;
+      }
+      if (a.learned/a.total > b.learned/b.total) {
+        return -1;
+      }
+      return 0;
+    })
+
+    setProgresoPorModulo(pm);
+  }
+
+  const fetchRanking = async () => {
+    setLoading(true);    
+    try {      
+      const d = await getRanking();
+      //filtrar los de calificación 0
+      const filtered = d.filter(v=>v.promedio!=0)
+      //ordenar por mayor ranking
+      const orderedAndFiltered = filtered.sort(function(a,b){
+          return b.promedio-a.promedio
+      });
+
+      setDataRanking(orderedAndFiltered || [])
+    } catch (error) {
+        error_alert("No se pudo cargar el ranking");
+        console.error(error)
+    } finally{
+        setLoading(false);
+        setRefreshing(false)
+    }
+  } 
+ 
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchHistorial();
+    fetchProgresoGlobal();
+    fetchProgresoModulo();
+    fetchRanking();    
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={paleta.dark_aqua} />
+      </View>
+    );
+  }
+
+  const sections: DashboardSection[] = [
+    { title: 'Progreso por módulo', type: 'modules', data: progresoPorModulo.slice(0, 3) },
+    { title: 'Señas dominadas recientemente', type: 'history', data: historial.slice(0, 3) },
+    {title: "Señas a dominar", type:"aprendiendo", data: seniasAprendiendo.slice(0,3)},
+    {title: "Ranking profesores", type: "ranking", data: dataRanking?.slice(0,3)},
+    
+  ];
+
+  return (
+    <View style={styles.container}>
+      <SectionList
+        sections={sections}
+        keyExtractor={(item, index) => (item?.id ? String(item.id) : `${item?.senia_id}-${item?.created_at || index}`)}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        stickySectionHeadersEnabled={false}
+        contentContainerStyle={styles.listContent}
+        SectionSeparatorComponent={() => <View style={styles.separator} />}
+        ListHeaderComponent={() => (
+          <View style={styles.headerBox}>
+            <Text style={styles.titleCursos}>Dashboard de Aprendizaje</Text>
+            <GlobalProgress learned={progresoGlobal.learned} total={progresoGlobal.total} />
+            <View style={{ marginTop: 12, alignItems: 'center' }}>
+              <Pressable onPress={() => router.navigate('/tabs/Dashboard_Alumno/objetivos_activos')}>
+                <Text  style={{ color: '#0a7ea4', fontWeight: 'bold' }}>
+                Ver objetivos activos
+              </Text></Pressable>
+              <Pressable onPress={() => router.navigate('/tabs/Dashboard_Alumno/reporte_historico' )}>
+                <Text style={{ color: '#0a7ea4', fontWeight: 'bold', marginTop: 6 }}>
+                Ver reporte histórico
+              </Text></Pressable>
+              
+            </View>
+           
+          </View>
+        )}
+        ListHeaderComponentStyle={{ paddingHorizontal: 18 }}
+        ListFooterComponent={<View style={{ height: 24 }} />}
+        renderSectionHeader={({ section }) => (
+          <Text style={styles.sectionTitle}>{section.title}</Text>          
+        )}
+        renderSectionFooter={({ section }) => (
+          section.type === 'modules' ? (
+            <>
+            <Text style={styles.emptyText}>
+              {section.data.length === 0 ? (<Text style={styles.emptyText}>No hay módulos disponibles.</Text>)  : 
+              <TouchableOpacity style={[styles.badge,estilos.centrado]} onPress={()=>setShowModulos(true)}>
+              <ThemedText type='defaultSemiBold' lightColor='white'>Ver todos</ThemedText>
+            </TouchableOpacity>}
+            </Text>
+            </>            
+          ) : 
+          section.type=== 'ranking' ? (
+            <TouchableOpacity style={[styles.badge,estilos.centrado]} onPress={()=>router.navigate("/tabs/Dashboard_Alumno/ranking")}>
+              <ThemedText type='defaultSemiBold' lightColor='white'>Ver ranking completo</ThemedText>
+            </TouchableOpacity>
+            
+          ): section.type=== 'history' ?(
+            <Text style={styles.emptyText}>
+              {section.data.length === 0 ? 'Aún no hay señas aprendidas.' : ''}
+            </Text>
+          ): (
+            <>
+            <Text style={styles.emptyText}>
+              {section.data.length === 0 ? (<Text style={styles.emptyText}>No tienes señas en progreso.</Text>)  : 
+              <TouchableOpacity style={[styles.badge,estilos.centrado]} onPress={()=>setShowAprendiendo(true)}>
+              <ThemedText type='defaultSemiBold' lightColor='white'>Ver todas</ThemedText>
+            </TouchableOpacity>}
+            </Text>
+            </>     
+          )
+        )}
+        renderItem={({ item, section }) => (
+          section.type === 'modules' ? (
+            <ProgressCard
+              title={item.nombre}
+              learned={item.learned}
+              total={item.total}
+              onPress={() => router.push({ pathname: '/tabs/Modulos_Alumno/modulo_detalle', params: { id: String(item.id) } })}
+            />
+          ) : 
+            section.type === 'history'?
+          (
+            <HistorialItem
+              nombre={item.senia_nombre}
+              modulo={item.categoria}
+              fechaISO={item.updated_at}
+            />
+          ): section.type === 'ranking'? (
+            <RatingCard nombre={item.username} rating={item.promedio} cant_reviews={item.cant_reviews}/>
+          ) : (
+            <AprendiendoItem nombre={item.senia_nombre} categoria={item.categoria} cant_aciertos={item.cant_aciertos}/>
+          )
+        )}
+      />        
+      <SmallPopupModal title={"Progreso por módulo"} modalVisible={showModalModulos} setVisible={setShowModulos}>
+        <ScrollView style={styles.modalScrollView}>
+          {progresoPorModulo.map((modulo) => (
+            <View key={String(modulo.id)} style={styles.categoriaItem}>
+              <View style={styles.categoriaHeader}>
+                <Text style={styles.categoriaNombre}>{modulo.nombre}</Text>
+                <Text style={styles.categoriaPorcentaje}>{modulo.learned/modulo.total*100}%</Text>
+              </View>
+              <ProgressBarAnimada progress={modulo.learned/modulo.total*100} />
+            </View>
+          ))}
+        </ScrollView>
+      </SmallPopupModal>
+
+      <SmallPopupModal title={"Señas en progreso"} modalVisible={showModalAprendiendo} setVisible={setShowAprendiendo}>
+        <ScrollView style={styles.modalScrollView}>
+          {seniasAprendiendo.map((senia) => (
+            <View key={String(senia.senia_id)} style={styles.categoriaItem}>
+              <View style={styles.categoriaHeader}>
+                <Text style={styles.categoriaNombre}>{senia.senia_nombre}</Text>
+                <Text style={styles.categoriaPorcentaje}>{senia.cant_aciertos/10*100}%</Text>
+              </View>
+              <ProgressBarAnimada progress={senia.cant_aciertos/10*100} />
+            </View>
+          ))}
+        </ScrollView>
+      </SmallPopupModal>
+       
+      <Toast/>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#e6f7f2' },
+  listContent: { paddingHorizontal: 16, paddingBottom: 80 },
+  headerBox: { paddingBottom: 8 },
+  titleCursos: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#222',
+    marginTop: 60,
+    marginBottom: 28,
+    alignSelf: 'center',
+    letterSpacing: 0.5,
+  },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#222', marginTop: 8, marginBottom: 8 },
+  historialHeader: { fontSize: 18, fontWeight: 'bold', color: '#222', marginTop: 8, marginBottom: 8 },
+  errorBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fdecea', borderRadius: 8, padding: 10, marginTop: 6, marginBottom: 10, borderWidth: 1, borderColor: '#f5c2c0' },
+  errorText: { color: '#e74c3c', marginLeft: 6 },
+  emptyText: { color: '#777', alignSelf: 'center', marginVertical: 6 },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 32,
+    padding: 24,
+    flex: 1, 
+    alignItems: 'flex-start',
+    shadowColor: '#222',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+    borderWidth: 1.5,
+    borderColor: '#e0e0e0',
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: paleta.dark_aqua,
+    marginTop: 50,
+    marginBottom: 40,
+    alignSelf: 'center',
+    zIndex: 2,
+    letterSpacing: 0.5,
+  },
+  separator: {
+    height: 10,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    minHeight: '70%',
+  },
+  badge: {
+    backgroundColor: paleta.dark_aqua,    
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    fontWeight: '600',
+    
+  },
+  categoriaItem: {
+    marginBottom: 14,
+  },
+  categoriaHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  categoriaNombre: {
+    fontWeight: '600',
+    fontSize: 14,
+    color: '#333',
+  },
+  categoriaPorcentaje: {
+    fontWeight: '600',
+    fontSize: 14,
+    color: '#20bfa9',
+  },
+  progressBarBg: {
+    width: '100%',
+    height: 12,
+    backgroundColor: '#eee',
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#20bfa9',
+    borderRadius: 6,
+  },
+  modalScrollView: {
+    paddingBottom: 20,
+    maxHeight: 400
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#e6f7f2',
+  },
+});
