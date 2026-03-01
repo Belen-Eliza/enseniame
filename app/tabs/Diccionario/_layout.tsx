@@ -1,7 +1,5 @@
-import { estilos } from '@/components/estilos';
-import { MaterialIcons } from '@expo/vector-icons';
-import { Stack, Navigator } from 'expo-router';
-import { Pressable } from 'react-native';
+import { Stack } from 'expo-router';
+
 
 export default function Layout(){
     return(
@@ -16,8 +14,6 @@ export default function Layout(){
             },
           }}>
             <Stack.Screen name='index' options={{headerShown:false}}/>
-            <Stack.Screen name='editar_senia' options={{presentation:"modal",headerShown:false }}   />
-            <Stack.Screen name='reportar_senia' options={{presentation:"modal",headerShown:false }}   />
-
+            
     </Stack>)
 }

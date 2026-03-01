@@ -1,24 +1,24 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
-import { 
-  View, Text, StyleSheet, FlatList, Pressable, 
-   ActivityIndicator, TextInput,
-  TouchableOpacity, Alert
-} from 'react-native';
-import { Checkbox } from 'expo-checkbox';
-import { Ionicons } from '@expo/vector-icons';
+import { ThemedText } from '@/components/ThemedText';
 import VideoPlayer from '@/components/VideoPlayer';
-import {  Estado_Pendiente, Senia_Alumno, Senia_Info } from '@/components/types';
 import { error_alert } from '@/components/alert';
 import { paleta } from '@/components/colores';
-import { estilos } from '@/components/estilos';
-import {  buscarSenias, eliminar_video } from '@/conexiones/videos';
-import { ThemedText } from '@/components/ThemedText';
-import { useUserContext } from '@/hooks/useUserContext';
-import { router } from 'expo-router';
 import { SmallPopupModal } from '@/components/modals';
-import Toast from 'react-native-toast-message';
+import { Estado_Pendiente, Senia_Alumno, Senia_Info } from '@/components/types';
 import { getEstado } from '@/conexiones/senia_alumno';
+import { buscarSenias } from '@/conexiones/videos';
+import { useUserContext } from '@/hooks/useUserContext';
+import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList, Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View
+} from 'react-native';
+import Toast from 'react-native-toast-message';
 
 export default function Diccionario() {
   const [senias, setSenias] = useState<Senia_Info[]>([]);
@@ -83,30 +83,7 @@ export default function Diccionario() {
   const esMio = (senia: Senia_Info)=>{
     return senia.id_autor == contexto.user.id && contexto.user.is_prof
   }
-
-  const eliminar_senia = (senia: Senia_Info) =>{
-    Alert.alert('Eliminar seña', '¿Estás seguro de que querés eliminar el video?', [
-      {
-        text: 'Cancelar',
-        style: 'cancel',
-      },
-      {text: 'Confirmar', onPress: () => {
-        eliminar_video(senia);
-        setModalVisible(false);
-        router.replace("/tabs/Diccionario");
-        }},
-    ])
-  }
-
-  const editar_senia= (senia: Senia_Info) =>{
-    router.push({ pathname: "/tabs/Diccionario/editar_senia", params: { id_senia: senia.id, url: senia.video_url,significado:senia.significado, cate:senia.categoria } });
-    setModalVisible(false);
-  }
-
-  const reportar_senia = (senia: Senia_Info) =>{
-    router.push({ pathname: "/tabs/Diccionario/reportar_senia", params: { id_senia: senia.id, url: senia.video_url,significado:senia.significado, cate:senia.categoria } });
-    setModalVisible(false);
-  }
+  
 
   const renderSenia = ({ item }: { item: Senia_Info }) => (
     <Pressable 
@@ -146,36 +123,26 @@ export default function Diccionario() {
 
   return (
     <View style={styles.container}>
-          <Text style={styles.titleCursos}>Diccionario</Text>
-          <View style={styles.searchBarRowCursos}>
-            <Ionicons name="search" size={22} color="#20bfa9" style={styles.searchIcon} />
-            <TextInput
-              style={styles.searchInputCursos}
-              placeholder="Buscar seña..."
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholderTextColor="#20bfa980"
-            />
-            <Text style={styles.countTextCursos}>{filteredSenias.length}</Text>
-          </View>
-
-        { contexto.user.is_prof && <View style={[styles.searchContainer,{padding:5}]}>
-          <Checkbox
-            style={styles.checkbox}
-            value={mostrarPropios}
-            onValueChange={setmostrarPropios}
-            color={mostrarPropios ? paleta.yellow : undefined}
-          />
-          <ThemedText type='defaultSemiBold' lightColor={paleta.dark_aqua}>Mostrar sólo mis videos</ThemedText>
-        </View>}
-
-        <FlatList
-          data={filteredSenias}
-          renderItem={renderSenia}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.listContent}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
+      <Text style={styles.titleCursos}>Diccionario</Text>
+      <View style={styles.searchBarRowCursos}>
+        <Ionicons name="search" size={22} color="#20bfa9" style={styles.searchIcon} />
+        <TextInput
+          style={styles.searchInputCursos}
+          placeholder="Buscar seña..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholderTextColor="#20bfa980"
         />
+        <Text style={styles.countTextCursos}>{filteredSenias.length}</Text>
+      </View>       
+
+      <FlatList
+        data={filteredSenias}
+        renderItem={renderSenia}
+        keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={styles.listContent}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+      />
 
         <SmallPopupModal title={selectedSenia?.info.significado} modalVisible={modalVisible} setVisible={setModalVisible}>
           {selectedSenia && (
@@ -191,14 +158,7 @@ export default function Diccionario() {
             
             </>
           )}
-          
-          {selectedSenia && selectedSenia.info.Profesores && esMio(selectedSenia.info) ?
-          <ThemedText style={{margin:10}}>
-            <ThemedText type='defaultSemiBold'>Autor:</ThemedText> {''}
-            <ThemedText>{selectedSenia.info.Profesores.Users.username} (Yo)</ThemedText> {''}
-          </ThemedText>
-            :null
-          }
+                    
           {selectedSenia && selectedSenia.info.Profesores && !esMio(selectedSenia.info) ?
             <ThemedText style={{margin:10}}>
               <ThemedText type='defaultSemiBold'>Autor:</ThemedText> {''}
@@ -212,26 +172,7 @@ export default function Diccionario() {
               <ThemedText type='defaultSemiBold'>Estado:</ThemedText> {''}
               <ThemedText>{selectedSenia.estado.toString()}</ThemedText>
             </ThemedText>  
-            )}
-
-          {selectedSenia && esMio(selectedSenia.info) ?
-            <>
-              <TouchableOpacity style={[styles.iconButton,estilos.shadow]} onPress={()=>{editar_senia(selectedSenia.info)}}   >  
-                <Ionicons name="create" color={paleta.dark_aqua} size={25} style={styles.icon} />
-                <ThemedText type="subtitle" lightColor={paleta.dark_aqua} style={{flex:2}}>Editar seña</ThemedText>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.iconButton,estilos.shadow,{backgroundColor:"red"}]} onPress={()=>{eliminar_senia(selectedSenia.info)}}   >  
-                <Ionicons name="trash-bin-outline" color='white' size={25} style={styles.icon} />
-                <ThemedText type="subtitle" lightColor='white' style={{flex:2}}>Eliminar seña</ThemedText>
-              </TouchableOpacity></> : null
-          }
-
-          {selectedSenia && !esMio(selectedSenia.info) && contexto.user.is_prof ?
-            <TouchableOpacity style={[styles.iconButton,estilos.shadow]} onPress={()=>{reportar_senia(selectedSenia.info)}}   >  
-              <Ionicons name="alert-circle-outline" color={paleta.dark_aqua} size={25} style={styles.icon} />
-              <ThemedText type="subtitle" lightColor={paleta.dark_aqua} style={{flex:2}}>Reportar seña</ThemedText>
-            </TouchableOpacity>: null
-          }
+            )}         
 
         </SmallPopupModal>
         <Toast/>
