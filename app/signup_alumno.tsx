@@ -1,16 +1,16 @@
-import { View,  StyleSheet,  Platform,  ScrollView, KeyboardAvoidingView, ActivityIndicator} from 'react-native';
-import { useState } from "react";
-import { Link,} from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
-import { error_alert,success_alert } from '@/components/alert';
-import { validateEmail, validatePassword, } from '@/components/validaciones';
-import Toast from 'react-native-toast-message';
-import { registrar_alumno } from '@/conexiones/gestion_usuarios';
-import { Alumno } from '@/components/types';
-import { useUserContext } from '@/hooks/useUserContext';
+import { error_alert } from '@/components/alert';
 import { BotonLogin } from '@/components/botones';
-import { IconTextInput, PasswordInput } from '@/components/inputs';
 import { paleta } from '@/components/colores';
+import { IconTextInput, PasswordInput } from '@/components/inputs';
+import { Alumno } from '@/components/types';
+import { validateEmail, validatePassword, } from '@/components/validaciones';
+import { registrar_alumno } from '@/conexiones/gestion_usuarios';
+import { useUserContext } from '@/hooks/useUserContext';
+import { Link, } from 'expo-router';
+import { useState } from "react";
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import Toast from 'react-native-toast-message';
 
 export default function Signup() {
   
@@ -153,13 +153,7 @@ export default function Signup() {
         placeholder='Confirmar contraseña'
       />
       {errorPasswordConfirm ? <ThemedText type='error'>{errorPasswordConfirm}</ThemedText> : null}
-
-      <View style={{marginVertical:15}}>
-        <Link href="/signup_profe" >
-          <ThemedText lightColor='gray'>¿Eres profesor? / </ThemedText> {''}
-          <ThemedText style={{fontSize: 16}} type='defaultSemiBold' >Crear cuenta de profesor</ThemedText>
-        </Link>
-      </View>
+      
      
      <BotonLogin callback={signup} textColor={'black'} bckColor={paleta.dark_aqua} text={'Registrarse'} />
       

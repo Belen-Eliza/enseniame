@@ -1,10 +1,7 @@
-import { HapticTab } from "@/components/HapticTab";
-import TabBarBackground from "@/components/TabBarBackground";
-import { TabBarIcon } from "@/components/TabBarIcon";
-import { Ionicons } from "@expo/vector-icons";
-import { Stack, Tabs } from "expo-router";
-import { Platform, StyleSheet, View , Text, TouchableOpacity} from "react-native";
 import { useUserContext } from '@/hooks/useUserContext';
+import { Ionicons } from "@expo/vector-icons";
+import { Tabs } from "expo-router";
+import { StyleSheet, Text, TouchableOpacity } from "react-native";
 
 export default function RootLayout() {
   const contexto = useUserContext()
@@ -31,7 +28,7 @@ export default function RootLayout() {
       })}
       />
 
-      <Tabs.Screen name={contexto.user.is_prof ? 'Modulos_Profe' :'Modulos_Alumno' }  options={() =>({title:"Módulos", headerShown:false,     
+      <Tabs.Screen name='Modulos_Alumno'  options={() =>({title:"Módulos", headerShown:false,     
           tabBarButton: ((props) => 
             <TouchableOpacity onPress={() => contexto.user.gotToModules()}  style={styles.navItem}>
               <Ionicons name="albums-outline" size={22} color="#fff" />
@@ -41,7 +38,7 @@ export default function RootLayout() {
         })}
         />
 
-      {!contexto.user.is_prof ? (
+    
         <Tabs.Screen name='Dashboard_Alumno' options={({ navigation }) => ({ title: 'Dashboard', headerShown: false,
           tabBarButton: ((props) => (
             <TouchableOpacity onPress={() => navigation.navigate('Dashboard_Alumno')} style={styles.navItem}>
@@ -50,28 +47,9 @@ export default function RootLayout() {
             </TouchableOpacity>
           )),
         })} />
-      ) :
-    <Tabs.Screen name='Dashboard_Alumno'  options={{href:null}} />
-    }
+      
      
-    <Tabs.Screen name='misiones/index' options={{href:null}} />
-
-    <Tabs.Screen name='dashboard_alumno' options={{href:null}} />
-    <Tabs.Screen name='leaderboard_grupo' options={{href:null, headerShown: false,}} />
-
-      {contexto.user.is_prof ? (
-        <Tabs.Screen name='Modulos_Alumno'  options={{href:null}} />
-      ): <Tabs.Screen name='Modulos_Profe'  options={{href:null}} />}
-      {contexto.user.is_prof ? <Tabs.Screen name='video_upload_form'   options={({ navigation }) =>({title:"Subir video", headerShown:false,
-          tabBarButton: ((props) => 
-            <TouchableOpacity onPress={() => navigation.navigate('video_upload_form')}  style={styles.fabButton}>
-              <Ionicons name="add" size={32} color="#fff" />
-            </TouchableOpacity>
-          ),
-        })}
-        /> :
-        <Tabs.Screen name="video_upload_form" options={{href:null}}/>
-      }
+   
 
       <Tabs.Screen name='Diccionario'   options={({ navigation }) =>({title:"Diccionario", headerShown:false,
         tabBarButton: ((props) => 
@@ -83,7 +61,7 @@ export default function RootLayout() {
       })}
       />
 
-      <Tabs.Screen name={contexto.user.is_prof ? 'perfil' :'PerfilAlumno' }   options={({ navigation }) =>({title:"Perfil", headerShown:false, 
+      <Tabs.Screen name='PerfilAlumno'    options={({ navigation }) =>({title:"Perfil", headerShown:false, 
         tabBarButton: ((props) => 
           <TouchableOpacity onPress={() => contexto.user.gotToProfile()}  style={styles.navItem}>
             <Ionicons name="person-circle-outline" size={22} color="#fff" />
@@ -91,14 +69,13 @@ export default function RootLayout() {
           </TouchableOpacity>
         ),
       })}
-      />
-      {contexto.user.is_prof ? (
-        <Tabs.Screen name='PerfilAlumno'  options={{href:null}} />
-      ): <Tabs.Screen name='perfil'  options={{href:null}} />}      
+      />      
       
       <Tabs.Screen name='cursos'  options={{href:null,headerShown:false}} />
       <Tabs.Screen name="HomeStudent" options={{href:null,title:"Home",headerShown:false}}/>
       <Tabs.Screen name="HomeTeacher" options={{href:null,title:"Home",headerShown:false}}/>
+      <Tabs.Screen name='misiones/index' options={{href:null}} />    
+      <Tabs.Screen name='leaderboard_grupo' options={{href:null, headerShown: false,}} />
       
     </Tabs>
   );
