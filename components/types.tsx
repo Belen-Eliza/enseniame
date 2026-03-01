@@ -1,5 +1,4 @@
-import { marcar_aprendida, marcar_aprendiendo, marcar_pendiente } from "@/conexiones/aprendidas";
-import { sumar_acierto } from "@/conexiones/aprendidas";
+import { marcar_aprendida, marcar_aprendiendo, marcar_pendiente, sumar_acierto } from "@/conexiones/aprendidas";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 
@@ -27,23 +26,6 @@ class Alumno extends User {
         router.push('/tabs/HomeStudent');
     }
 }
-
-class Profesor extends User  {
-    institution: string    
-
-    constructor(mail:string,name: string,pass:string, institucion:string){
-        super(mail,name,pass,true);
-        this.is_prof=true;
-        this.institution=institucion;
-    }
-
-    goHome(): void {
-        router.push('/tabs/HomeTeacher');
-    }
-    getUser(){
-        return {mail:this.mail,username:this.username,is_prof:true,hashed_password:this.hashed_password}
-    }
-} 
 
  class Logged_User {
     mail: string;
@@ -76,34 +58,7 @@ class Profesor extends User  {
      sumarRacha(){};
      perderRacha(){};
 }
-class Logged_Profesor extends Logged_User {
-    institution: string;
-    is_prof: true;
-    is_admin:boolean;
 
-    constructor(mail:string,name: string,pass:string, institucion:string,id:number,is_admin:boolean,avatar?:string){
-        super(mail,name,pass,id,avatar);
-        this.institution=institucion;
-        this.is_prof=true;
-        this.is_admin=is_admin;
-    }
-
-    goHome(): void {
-        router.push('/tabs/HomeTeacher');
-    }
-    gotToModules():void{
-        router.push('/tabs/Modulos_Profe');
-    }
-    gotToProfile():void{
-        router.push('/tabs/perfil');
-    }
-    getInstitucion(){
-        return this.institution
-    }
-     getIsAdmin(){
-        return this.is_admin
-    }
-}
 
 class Logged_Alumno extends Logged_User {
     racha: number;
@@ -314,6 +269,4 @@ type Insignia = {
   ganada: boolean;
 }
 
-export {User,Logged_User, Logged_Profesor, Alumno, Profesor, Logged_Alumno, Senia,  Senia_Info, Modulo, icon_type, Calificaciones,
-    Avatar, Senia_Alumno, Estado_Aprendiendo,Estado_Dominada,Estado_Pendiente,Estado_Senia,Insignia
-}
+export { Alumno, Avatar, Calificaciones, Estado_Aprendiendo, Estado_Dominada, Estado_Pendiente, Estado_Senia, icon_type, Insignia, Logged_Alumno, Logged_User, Modulo, Senia, Senia_Alumno, Senia_Info, User };

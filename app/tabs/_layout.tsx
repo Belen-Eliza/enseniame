@@ -72,8 +72,7 @@ export default function RootLayout() {
       />      
       
       <Tabs.Screen name='cursos'  options={{href:null,headerShown:false}} />
-      <Tabs.Screen name="HomeStudent" options={{href:null,title:"Home",headerShown:false}}/>
-      <Tabs.Screen name="HomeTeacher" options={{href:null,title:"Home",headerShown:false}}/>
+      <Tabs.Screen name="HomeStudent" options={{href:null,title:"Home",headerShown:false}}/>      
       <Tabs.Screen name='misiones/index' options={{href:null}} />    
       <Tabs.Screen name='leaderboard_grupo' options={{href:null, headerShown: false,}} />
       

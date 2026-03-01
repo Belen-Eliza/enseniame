@@ -1,20 +1,24 @@
-import {   View,  StyleSheet,  ScrollView,  AppState, 
-   KeyboardAvoidingView,  Platform,  ActivityIndicator
-} from 'react-native';
-import { Image } from 'expo-image';
-import { useState } from "react";
-import { Link , router} from 'expo-router';
+import { error_alert } from '@/components/alert';
+import { BotonLogin } from '@/components/botones';
+import { paleta } from '@/components/colores';
+import { IconTextInput, PasswordInput } from '@/components/inputs';
 import { ThemedText } from '@/components/ThemedText';
 import { validateEmail, validatePassword } from '@/components/validaciones';
-import { error_alert } from '@/components/alert';
-import Toast from 'react-native-toast-message';
-import {ingresar} from "../conexiones/gestion_usuarios"
 import { useUserContext } from '@/hooks/useUserContext';
-import { supabase } from '../utils/supabase'
-import { estilos } from '@/components/estilos';
-import { paleta, paleta_colores } from '@/components/colores';
-import { IconTextInput, PasswordInput } from '@/components/inputs';
-import { BotonLogin } from '@/components/botones';
+import { Image } from 'expo-image';
+import { Link } from 'expo-router';
+import { useState } from "react";
+import {
+  ActivityIndicator,
+  AppState,
+  KeyboardAvoidingView, Platform,
+  ScrollView,
+  StyleSheet,
+  View
+} from 'react-native';
+import Toast from 'react-native-toast-message';
+import { ingresar } from "../conexiones/gestion_usuarios";
+import { supabase } from '../utils/supabase';
 
 // Tells Supabase Auth to continuously refresh the session automatically if
 // the app is in the foreground. When this is added, you will continue to receive
@@ -46,13 +50,13 @@ export default function Login() {
       try {
         //acceder a db
       setLoading(true);
-      const usuario = await ingresar(lower_case_mail,password);
+      const usuario = await ingresar(lower_case_mail,password);      
       if (usuario) login_app(usuario);
       setMail("");
       setPassword("");
       setShowPassword(false);
       } catch (error) {
-        console.error(error);
+        console.error("Login error:",error);        
         error_alert("Ocurrió un error")
       } finally {
         setLoading(false)

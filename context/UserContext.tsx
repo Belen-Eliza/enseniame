@@ -1,11 +1,11 @@
-import {  Logged_Alumno, Logged_Profesor, Logged_User,  } from '@/components/types';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import {  useState, useEffect } from 'react';
-import { UserContext } from '@/hooks/useUserContext';
-import { supabase } from '../utils/supabase'
 import { error_alert } from '@/components/alert';
-import type { Session } from '@supabase/supabase-js'
+import { Logged_Alumno, Logged_User, } from '@/components/types';
+import { UserContext } from '@/hooks/useUserContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import type { Session } from '@supabase/supabase-js';
 import * as Crypto from 'expo-crypto';
+import { useEffect, useState } from 'react';
+import { supabase } from '../utils/supabase';
 
 const hash = async (text: string) =>{
   const h = await Crypto.digestStringAsync(
@@ -174,12 +174,7 @@ export default function UserContextProvider  ({ children }: { children: React.Re
                 const usernameNorm: string = String(raw?.username ?? '').trim() || 'Alumno';
                 const passwordHash: string = String(raw?.hashed_password ?? '');
                 
-                if (isProf) {
-                    const { data: profe, error } = await supabase.from('Profesores').select('*').eq('id', id).single();
-                    const institution: string  =  String(profe.institucion).trim() ;
-                    if (error) throw error
-                    setUser(new Logged_Profesor(mailNorm, usernameNorm, passwordHash, institution ?? '', id,profe.is_admin));
-                } else {
+                if (!isProf) {                   
                     const { data: alumno, error } = await supabase.from('Alumnos').select('*').eq('id', id).single();
                     if (error) throw error
                     const nuevo =new Logged_Alumno(mailNorm, usernameNorm, passwordHash, id,alumno.racha,
