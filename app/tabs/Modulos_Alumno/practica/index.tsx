@@ -149,7 +149,7 @@ export default  function Practica (){
 
             {senia_actual && index_actual%2==0 && (                            
                 <FlashCardVideo currentIndex={index_actual+1} senia_actual={senia_actual?.senia} 
-            setMostrarRes={setMostrarSignificado} total={senias.length}/> 
+            setMostrarRes={setMostrarSignificado} total={senias.length} opciones_senias={senias}/> 
             )}
 
             {senia_actual && index_actual%2!=0 && (                            
