@@ -1,16 +1,35 @@
-import {   Pressable, StyleSheet} from 'react-native';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { Link, router } from 'expo-router';
-import { Image } from 'expo-image';
 import { HelloWave } from '@/components/HelloWave';
+import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { BotonLogin } from '@/components/botones';
 import { paleta } from '@/components/colores';
+import { get_user_by_id } from '@/conexiones/gestion_usuarios';
 import { useUserContext } from '@/hooks/useUserContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Image } from 'expo-image';
+import { router } from 'expo-router';
+import { useEffect } from 'react';
+import { StyleSheet } from 'react-native';
 
 export default function Index() {
-  const contexto = useUserContext()
+  const contexto = useUserContext();
+
+  useEffect( () => {
+    (async ()=>  {
+      const value = await AsyncStorage.getItem("token");
+      if (value !== null) { 
+        try {
+          const usuario = await get_user_by_id(Number(value)) ;
+          if (usuario) contexto.login_app(usuario);
+        } catch (error) {
+          console.log(error," al regresar a la sesión");
+        }
+        
+      }
+    } )()
+  }, [])
+
   return (
     <ParallaxScrollView
           headerBackgroundColor={{ light: '#4CC9F0', dark: '#1D3D47' }}

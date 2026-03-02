@@ -212,8 +212,32 @@ const confirmar_mail = async (mail:string,codigo:string) => {
   }
 }
 
+const get_user_by_id = async (id:number) => {
+  const {data:user,error} = await supabase.from('Users').select("*").eq('id', id).maybeSingle();
+  if (error) throw error
+  if (user ) {
+                
+  //devolver usuario hallado      
+    if (user.is_prof){
+      /* const { data: profe, error } = await supabase.from('Profesores').select('*').eq('id', user.id).single();
+      //console.log(profe)
+      if (error) throw error
+      return new Logged_Profesor(user.mail,user.username,user.hashed_password,profe.institucion,user.id,profe.is_admin,user.avatar) ; */
+      error_alert("La funcionalidad de profesor no está habilitada");
+      supabase.auth.signOut();
+      return false
+    } else {
+      const { data: alumno, error } = await supabase.from('Alumnos').select('*').eq('id', user.id).single();
+      //console.log(alumno)
+      if (error) throw error
+      return  new Logged_Alumno(user.mail,user.username,user.hashed_password,
+              user.id,alumno.racha,alumno.racha_maxima,alumno.xp,alumno.coins,alumno.last_login,user.avatar);
+    }
+  } 
+}
+
 export {
-  confirmar_mail, cuenta_existe, eliminar_usuario, entrar, enviar_otp, ingresar, nombre_usuario, registrar_alumno,
+  confirmar_mail, cuenta_existe, eliminar_usuario, entrar, enviar_otp, get_user_by_id, ingresar, nombre_usuario, registrar_alumno,
   verificar_otp
 };
 

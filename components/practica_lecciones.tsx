@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { ProgressBarAnimada } from './animations/ProgressBarAnimada';
 import { BotonLogin } from './botones';
 import { paleta, paleta_colores } from './colores';
@@ -25,8 +25,8 @@ function FlashCardVideo ({senia_actual,setMostrarRes,currentIndex,total,opciones
     const [selectedSenia,setSelectedSenia]= useState<Senia_Alumno>();
 
     const renderOpciones = ({ item }: { item: Senia_Leccion }) => (
-    <TouchableOpacity onPress={()=>setSelectedSenia(item.senia)} style={[styles.filtros,
-      {backgroundColor: selectedSenia && selectedSenia.info.id==item.senia.info.id ? paleta.dark_aqua:paleta.aqua}]}>
+    <TouchableOpacity onPress={()=>setSelectedSenia(item.senia)} style={[styles.filtros, estilos.centrado,
+      {backgroundColor: selectedSenia && selectedSenia.info.id==item.senia.info.id ? paleta.blue:paleta.turquesa}]}>
       <ThemedText lightColor={selectedSenia && selectedSenia.info.id==item.senia.info.id ? "white":"black"}>
         {item.senia.info.significado}</ThemedText>
     </TouchableOpacity>
@@ -42,7 +42,7 @@ function FlashCardVideo ({senia_actual,setMostrarRes,currentIndex,total,opciones
       
         <View style={[styles.bck_content,estilos.centrado]}>                             
             
-          <View style={[styles.card,paleta_colores.dark_aqua,estilos.centrado]}>
+          <View style={[styles.card,paleta_colores.dark_aqua,estilos.centrado,{height:"auto"}]}>
           <ThemedText style={[styles.title]}>Identificar el significado de la seña</ThemedText>
           
             <VideoPlayer 
@@ -50,15 +50,15 @@ function FlashCardVideo ({senia_actual,setMostrarRes,currentIndex,total,opciones
             style={styles.video}
             />        
 
-          <FlatList 
-            data={opciones_senias?.slice(0,6)}
+          {/* <FlatList 
+            data={opciones_senias?.slice(0,4)}
             renderItem={renderOpciones}
             keyExtractor={(item) => item.senia.info.id.toString()}
-            contentContainerStyle={styles.opciones}
+            contentContainerStyle={[estilos.centrado,styles.opciones]}
             ItemSeparatorComponent={() => <View style={styles.separator}  /> }
             columnWrapperStyle={{marginHorizontal:10}}
-            numColumns={3}
-          />
+            numColumns={2}
+          /> */}
             
           
           <BotonLogin callback={()=>setMostrarRes(true)} 
@@ -151,7 +151,9 @@ const styles = StyleSheet.create({
     fontWeight: "500"
   },
   opciones:{
-    height: 500
+    height: 120,   
+    marginBottom:0,
+     
   },
   separator:{
 
@@ -160,6 +162,7 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 12,        
     margin: 5,
-    marginBottom: 15
+    marginBottom: 15,
+    width: 150
   },
 })
