@@ -1,4 +1,4 @@
-import { supabase } from '../utils/supabase'
+import { supabase } from '../utils/supabase';
 import { cantidad_aprendidas, senias_aprendidas_reporte } from './aprendidas';
 
 type HistorialRow = { senia_id: number;  updated_at: Date ; categoria: string; senia_nombre: string };
@@ -32,7 +32,7 @@ const senias_aprendiendo_dash = async (id_alumno:number) => {
         .select('*, Senias(*,Categorias(*))')
         .eq('id_alumno', id_alumno)
         .eq("aprendida",false)
-        .order("updated_at",{ascending:false});
+        .order("cant_aciertos",{ascending:false});
     if (error) throw error
 
     if (data && data.length>0){
@@ -95,4 +95,4 @@ const mi_progreso_x_modulo = async (id_alumno:number) => {
     return res
 }
 
-export {senias_historial,mi_progreso_global,mi_progreso_x_modulo,senias_aprendiendo_dash}
+export { mi_progreso_global, mi_progreso_x_modulo, senias_aprendiendo_dash, senias_historial };
