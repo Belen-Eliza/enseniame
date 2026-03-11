@@ -3,6 +3,7 @@ import { BotonLogin } from '@/components/botones';
 import { paleta } from '@/components/colores';
 import { IconTextInput, PasswordInput } from '@/components/inputs';
 import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
 import { validateEmail, validatePassword } from '@/components/validaciones';
 import { useUserContext } from '@/hooks/useUserContext';
 import { Image } from 'expo-image';
@@ -66,8 +67,8 @@ export default function Login() {
     }
   }
   return (
-    <View
-      style={styles.mainView}
+    <ThemedView lightColor='white' darkColor="black"
+      style={[styles.mainView]}
     >
       {loading && (
         <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}> 
@@ -79,7 +80,7 @@ export default function Login() {
         style={{flex: 1}}
       >
       <ScrollView contentContainerStyle={[styles.scrollViewContent]}>
-          <View style={styles.formAndImg}>
+          <View style={[styles.formAndImg]}>
 
             <Image
               style={styles.image}
@@ -93,7 +94,7 @@ export default function Login() {
 
               <View style={{marginVertical:15}}>
                 <Link href="/signup_alumno" >
-                  <ThemedText lightColor='gray'>¿No tienes un usuario? / </ThemedText> {''}
+                  <ThemedText  lightColor='gray'>¿No tienes un usuario? / </ThemedText> {''}
                   <ThemedText style={{fontSize: 16}} type='defaultSemiBold' >Regístrate aquí</ThemedText>
                 </Link>
               </View>
@@ -132,7 +133,7 @@ export default function Login() {
         </ScrollView>
         </KeyboardAvoidingView>
       <Toast/>
-    </View>
+    </ThemedView>
   );
 }
 
@@ -142,8 +143,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     width: '100%',
-    height: '100%',
-    backgroundColor: "white"
+    height: '100%',    
   },
   
   scrollViewContent: {
