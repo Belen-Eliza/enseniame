@@ -86,8 +86,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-evenly',
     alignItems: 'center',
     backgroundColor: '#3e9f94ff',
-    paddingVertical: 12,
+    paddingVertical: 20,
     width: '100%',
+    height: 60,
     position: 'absolute',
     bottom: 0,
     left: 0,
@@ -97,13 +98,14 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: -3 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
-    elevation: 10,
+    elevation: 10,    
   },
   navItem: {
     alignItems: 'center',
     justifyContent: 'center',
     minWidth: 70,
-    marginTop: 15
+    marginTop: 15,
+    marginBottom: 14
   },
   navText: {
     color: '#fff',
@@ -111,23 +113,5 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontWeight: '500',
   },
-  fabButton: {
-    position: 'absolute',
-    left: '50%',
-    bottom: 1,
-    transform: [{ translateX: -32 }, { translateY: -20 }],
-    backgroundColor: '#8bcac0',
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.18,
-    shadowRadius: 8,
-    elevation: 8,
-    borderWidth: 4,
-    borderColor: '#f3e8ff',
-    zIndex: 2,
-  },
+  
 })
