@@ -1,6 +1,7 @@
 import { error_alert } from '@/components/alert';
 import { BotonLogin } from '@/components/botones';
 import { paleta } from '@/components/colores';
+import { estilos } from '@/components/estilos';
 import { IconTextInput, PasswordInput } from '@/components/inputs';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
@@ -12,8 +13,6 @@ import { useState } from "react";
 import {
   ActivityIndicator,
   AppState,
-  KeyboardAvoidingView, Platform,
-  ScrollView,
   StyleSheet,
   View
 } from 'react-native';
@@ -75,63 +74,57 @@ export default function Login() {
           <ActivityIndicator size="large" color="#20bfa9" />          
         </View>
       )}
-       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{flex: 1}}
-      >
-      <ScrollView contentContainerStyle={[styles.scrollViewContent]}>
-          <View style={[styles.formAndImg]}>
 
-            <Image
-              style={styles.image}
-              source={img}
-              contentFit="cover"
-              transition={1000}
-            />
-          
-           <View style={{alignSelf:"flex-start"}}>
-              <ThemedText type='title'>Ingresa a tu cuenta</ThemedText>
+      <View style={[styles.partition]}>
+        <Image
+          source={img}
+          style={styles.logo}
+          contentFit="contain"
+        />
+      </View>
 
-              <View style={{marginVertical:15}}>
-                <Link href="/signup_alumno" >
-                  <ThemedText  lightColor='gray'>¿No tienes un usuario? / </ThemedText> {''}
-                  <ThemedText style={{fontSize: 16}} type='defaultSemiBold' >Regístrate aquí</ThemedText>
-                </Link>
-              </View>
-           </View>
+      <View style={[styles.partition,estilos.centrado]}>
+        <View style={styles.margen}>
+          <ThemedText type='title'>Ingresa a tu cuenta</ThemedText>
 
-            <View style={styles.formContainer}>
-             
-              <IconTextInput 
-                icon={{Ionicon_name:"mail-outline"}} 
-                value={mail} 
-                bck_color={paleta.soft_yellow} 
-                onChange={setMail} 
-                placeholder='Correo electrónico' 
-                keyboardType='email-address' />
-
-              <PasswordInput 
-                value={password} 
-                bck_color={paleta.softgray} 
-                onChange={setPassword} 
-                showPassword={showPassword} 
-                setShowPassword={setShowPassword} 
-                placeholder='Contraseña' />
-
-              <View style={{marginVertical:15}}>
-                <Link href="/acc_recovery" >
-                  <ThemedText lightColor='gray'>¿Olvidaste tu contraseña? / </ThemedText> {''}
-                  <ThemedText style={{fontSize: 16}} type='defaultSemiBold' >Recuperar</ThemedText>
-                </Link>
-              </View>
-
-              <BotonLogin callback={login} textColor='black' bckColor='#73d3c8ff' text='Ingresar'  />
-
-            </View>
-            
+          <View style={{marginVertical:25}}>
+            <Link href="/signup_alumno" >
+              <ThemedText  lightColor='gray'>¿No tienes un usuario? / </ThemedText> {''}
+              <ThemedText style={{fontSize: 16}} type='defaultSemiBold' >Regístrate aquí</ThemedText>
+            </Link>
           </View>
-        </ScrollView>
-        </KeyboardAvoidingView>
+        </View>
+
+        <View style={styles.formContainer}>
+          
+          <IconTextInput 
+            icon={{Ionicon_name:"mail-outline"}} 
+            value={mail} 
+            bck_color={paleta.soft_yellow} 
+            onChange={setMail} 
+            placeholder='Correo electrónico' 
+            keyboardType='email-address' />
+
+          <PasswordInput 
+            value={password} 
+            bck_color={paleta.softgray} 
+            onChange={setPassword} 
+            showPassword={showPassword} 
+            setShowPassword={setShowPassword} 
+            placeholder='Contraseña' />
+
+          <View style={[estilos.centrado,styles.margen]}>
+            <Link style={styles.margen} href="/acc_recovery" >
+              <ThemedText lightColor='gray'>¿Olvidaste tu contraseña? / </ThemedText> {''}
+              <ThemedText style={{fontSize: 16}} type='defaultSemiBold' >Recuperar</ThemedText>
+            </Link>
+          </View>
+
+            <BotonLogin callback={login} textColor='black' bckColor={paleta.sea_green} text='Ingresar'  />
+
+        </View>
+      </View>     
+        
       <Toast/>
     </ThemedView>
   );
@@ -139,32 +132,28 @@ export default function Login() {
 
 const styles = StyleSheet.create({
   mainView:{
+    flexDirection: "row",
     flex: 1,
-    justifyContent: "space-between",
-    alignItems: "center",
-    width: '100%',
-    height: '100%',    
+    height: "100%",
+    width: "100%"
   },
-  
-  scrollViewContent: {
-    flexGrow: 1,
-    justifyContent: 'space-between',
-    minWidth: "80%",
-    
+  partition:{
+    height: "100%",
+    width: "50%",
+    padding: 40
+  },  
+   logo: {
+    height: "100%",
+    width: "100%",        
+  },  
+  margen:{
+    marginVertical: 10
   },
-  formAndImg: {
-    width: '100%',
-    borderRadius: 10,
-    padding: 20,
-    justifyContent: "center",
-    alignItems: 'center',
-    height: "100%"
-  },
+ 
   formContainer: {
-    width: "100%",
+    width: 400,
     zIndex: 999,
-    marginBottom: 20,
-    marginTop: 15
+    marginBottom: 20,    
   },
 
   image: {

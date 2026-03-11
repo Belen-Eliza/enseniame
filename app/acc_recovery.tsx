@@ -1,19 +1,25 @@
-import { Pressable,  TextInput,  View,
-  StyleSheet, ScrollView, Modal,TouchableOpacity
-} from 'react-native';
-import { useState } from "react";
-import { Link, router} from 'expo-router';
-import { ThemedText } from '@/components/ThemedText';
-import { Ionicons } from '@expo/vector-icons';
-import { validateEmail } from '@/components/validaciones';
 import { error_alert } from '@/components/alert';
-import Toast from 'react-native-toast-message';
-import { cuenta_existe,  enviar_otp, verificar_otp } from '@/conexiones/gestion_usuarios';
-import { useUserContext } from '@/hooks/useUserContext';
 import { BotonLogin } from '@/components/botones';
-import { IconTextInput } from '@/components/inputs';
 import { paleta } from '@/components/colores';
 import { estilos } from '@/components/estilos';
+import { IconTextInput } from '@/components/inputs';
+import { ThemedText } from '@/components/ThemedText';
+import { validateEmail } from '@/components/validaciones';
+import { cuenta_existe, enviar_otp, verificar_otp } from '@/conexiones/gestion_usuarios';
+import { useUserContext } from '@/hooks/useUserContext';
+import { Ionicons } from '@expo/vector-icons';
+import { Link, router } from 'expo-router';
+import { useState } from "react";
+import {
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View
+} from 'react-native';
+import Toast from 'react-native-toast-message';
 
 export default function Acc_recovery() {
   const [mail, setMail] = useState('');
@@ -90,7 +96,7 @@ export default function Acc_recovery() {
           <BotonLogin 
             callback={enviar_codigo}
             textColor='black'
-            bckColor={paleta.dark_aqua}
+            bckColor={paleta.sea_green}
             text='Enviar código'
           />
 
@@ -164,7 +170,7 @@ export default function Acc_recovery() {
               <BotonLogin 
                 callback={recuperar}
                 textColor='black'
-                bckColor={paleta.dark_aqua}
+                bckColor={paleta.sea_green}
                 text='Recuperar'
               />
 

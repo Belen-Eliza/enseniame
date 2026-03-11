@@ -1,15 +1,18 @@
 import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
 import { error_alert } from '@/components/alert';
 import { BotonLogin } from '@/components/botones';
 import { paleta } from '@/components/colores';
+import { estilos } from '@/components/estilos';
 import { IconTextInput, PasswordInput } from '@/components/inputs';
 import { Alumno } from '@/components/types';
 import { validateEmail, validatePassword, } from '@/components/validaciones';
 import { registrar_alumno } from '@/conexiones/gestion_usuarios';
 import { useUserContext } from '@/hooks/useUserContext';
+import { Image } from 'expo-image';
 import { Link, } from 'expo-router';
 import { useState } from "react";
-import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import Toast from 'react-native-toast-message';
 
 export default function Signup() {
@@ -90,25 +93,32 @@ export default function Signup() {
   }
 
   return (
-    <View style={styles.mainView} >
+    <ThemedView lightColor='white' darkColor="black"
+          style={[styles.mainView]}
+        >
 
       {loading && (
         <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}> 
           <ActivityIndicator size="large" color="#20bfa9" />          
         </View>
       )}
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{flex: 1}}
-      >
-      <ScrollView contentContainerStyle={[styles.scrollViewContent]}>
 
-        <View style={styles.formContainer}>
+      <View style={[styles.partition]}>
+        <Image
+          source={img}
+          style={styles.logo}
+          contentFit="contain"
+        />
+      </View>
 
-          <View style={{alignSelf:"flex-start"}}>
+      <View style={[styles.partition,estilos.centrado]}>
+
+        <View style={[styles.formContainer,estilos.centrado]}>
+
+          <View style={[styles.margen,estilos.centrado]}>
             <ThemedText type='title'>Crear cuenta</ThemedText>
 
-            <View style={{marginVertical:15}}>
+            <View style={[{marginVertical:25}]}>
               <Link href="/login" >
                 <ThemedText lightColor='gray'>¿Ya tienes un usuario? / </ThemedText> {''}
                 <ThemedText style={{fontSize: 16}} type='defaultSemiBold' >Inicia sesión aquí</ThemedText>
@@ -155,24 +165,34 @@ export default function Signup() {
       {errorPasswordConfirm ? <ThemedText type='error'>{errorPasswordConfirm}</ThemedText> : null}
       
      
-     <BotonLogin callback={signup} textColor={'black'} bckColor={paleta.dark_aqua} text={'Registrarse'} />
+     <BotonLogin callback={signup} textColor={'black'} bckColor={paleta.sea_green} text={'Registrarse'} />
       
       </View>
-      </ScrollView>
-      </KeyboardAvoidingView>
+      </View>            
+      
       <Toast/>
-    </View>
+    </ThemedView>
   );
 }
 
 const styles=StyleSheet.create({
   mainView:{
+    flexDirection: "row",
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    width: '100%',
-    height: '100%',
-    backgroundColor: "white"
+    height: "100%",
+    width: "100%"
+  },
+  partition:{
+    height: "100%",
+    width: "50%",
+    padding: 40
+  },  
+   logo: {
+    height: "100%",
+    width: "100%",        
+  },  
+  margen:{
+    marginVertical: 10
   },
   
   scrollViewContent: {
@@ -181,9 +201,8 @@ const styles=StyleSheet.create({
     minWidth: "80%",
   },
   formContainer: {
-    width: '100%',
-    borderRadius: 10,
-    padding: 20,
+    width:400,
+    borderRadius: 10,    
     justifyContent: "center",
     alignItems: 'center',
     height: "100%"

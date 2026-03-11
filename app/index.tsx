@@ -1,19 +1,20 @@
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import { BotonLogin } from '@/components/botones';
 import { paleta } from '@/components/colores';
+import { estilos } from '@/components/estilos';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
 import { get_user_by_id } from '@/conexiones/gestion_usuarios';
 import { useUserContext } from '@/hooks/useUserContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useEffect } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 export default function Index() {
   const contexto = useUserContext();
+
+  const img = require("../assets/images/lsa-aqua.png");
 
   useEffect( () => {
     (async ()=>  {
@@ -30,21 +31,21 @@ export default function Index() {
     } )()
   }, [])
 
-  return (
-    <ParallaxScrollView
-          headerBackgroundColor={{ light: '#4CC9F0', dark: '#1D3D47' }}
-          headerImage={
-            <Image
-              source={require('@/assets/images/LSA-recorte.png')}
-              style={styles.logo}
-            />
-          }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">¡Hola!</ThemedText>
-        <HelloWave />
-      </ThemedView>
+  return (    
+    <ThemedView  style={styles.mainView}  lightColor='white'>
+      <View style={[styles.partition]}>
+        <Image
+          source={img}
+          style={styles.logo}
+          contentFit="contain"
+        />
+      </View>
+      <View style={[styles.partition,estilos.centrado]}>
+        <ThemedView style={[styles.titleContainer,estilos.centrado]}>
+          <ThemedText type="title" style={{fontSize: 40}}>¡Hola!</ThemedText>        
+        </ThemedView>
 
-      <ThemedView style={styles.stepContainer}>
+      <ThemedView style={[styles.stepContainer,estilos.centrado]}>
         <ThemedText>
           <ThemedText type="subtitle">¿Qué es </ThemedText>{''}
           <ThemedText type="subtitle">En</ThemedText>{''}
@@ -61,7 +62,7 @@ export default function Index() {
           
       </ThemedView>
 
-      <ThemedView style={styles.stepContainer}>
+      <ThemedView style={[styles.stepContainer,estilos.centrado]}>
         <ThemedText type="subtitle">¿Para quién es?</ThemedText>
         <ThemedText>
           Está pensada para personas oyentes que desean aprender 
@@ -70,7 +71,7 @@ export default function Index() {
         </ThemedText>
       </ThemedView>
 
-      <ThemedView style={styles.stepContainer}>
+      <ThemedView style={[styles.stepContainer,estilos.centrado]}>
         <ThemedText type="subtitle">Primeros pasos</ThemedText>
         <ThemedText>
           {`Para comenzar, creá una nueva cuenta y... `}
@@ -78,27 +79,39 @@ export default function Index() {
         </ThemedText>
       </ThemedView>
 
-      <BotonLogin callback={()=>{router.navigate('/login');}} textColor={'black'} bckColor={paleta.dark_aqua} text={'Empezar'} />
-    </ParallaxScrollView>
+      <BotonLogin callback={()=>{router.navigate('/login');}} textColor={'black'} bckColor={paleta.sea_green} text={'Empezar'} />
+      </View>
+      
+    </ThemedView>
   );
 }
 const styles = StyleSheet.create({
-  
+  mainView:{
+    flexDirection: "row",
+    flex: 1,
+    height: "100%",
+    width: "100%"
+  },
+  partition:{
+    height: "100%",
+    width: "50%",
+    padding: 40
+  },  
   logo: {
     height: "100%",
-    width: "100%",
-    bottom: 0,
-    left: 0,
-    position: "absolute",
+    width: "100%",  
+      
   },
   titleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    marginBottom: 40
   },
   stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+    gap: 18,
+    marginVertical: 8,
+    maxWidth: 500
   },
   
 })
